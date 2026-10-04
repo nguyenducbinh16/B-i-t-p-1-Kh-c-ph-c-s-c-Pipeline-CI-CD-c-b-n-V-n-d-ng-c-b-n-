@@ -1,0 +1,30 @@
+# Định nghĩa các stage trong pipeline
+stages:
+  - build_app
+
+# Job build ứng dụng Spring Boot bằng Gradle
+build_job:
+  stage: build_app
+
+  # Bổ sung image chứa JDK 17 để chạy được ./gradlew
+  image: eclipse-temurin:17-jdk-alpine
+
+  # Cache thư mục Gradle để tăng tốc các lần build sau
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .gradle/
+      - build/
+
+  script:
+    # Cấp quyền thực thi cho Gradle Wrapper (tránh lỗi permission denied)
+    - chmod +x ./gradlew
+    # Chạy build, bỏ qua test
+    - ./gradlew clean build -x test
+
+  # (Tuỳ chọn) Lưu file JAR để tải về sau khi build xong
+  artifacts:
+    name: "user-service-jar"
+    paths:
+      - build/libs/*.jar
+    expire_in: 1 week
